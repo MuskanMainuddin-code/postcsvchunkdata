@@ -8,7 +8,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="insert-record" element={<InsertData/>} />
+        <Route path="/" element={<InsertData/>} />
       </Routes>
     </BrowserRouter>
 

@@ -3,34 +3,39 @@ import DataTable from 'react-data-table-component';
 import DataTableExtensions from 'react-data-table-component-extensions';
 import 'react-data-table-component-extensions/dist/index.css';
 import axios from 'axios';
-import records from "./records";
+// import records from "./records";
 import _ from "lodash";
 import Papa from "papaparse";
 
 const InsertData = () => {
   var data = [];
   const [all_records, setall_records] = useState([])
-  const [refresh, setrefresh] = useState(true)
-  const [loader, setloader] = useState(false)
+  const [refresh, setrefresh] = useState(false)
+  const [fetchloader, setfetchloader] = useState(false)
+  const [insertloader, setinsertloader] = useState(false)
   const [CSVData, setCSVData] = useState();
 
   var commonConfig = { delimiter: "," };
 
   useEffect(() => {
     const fetchData = async () => {
-      setloader(true)
+      setfetchloader(true)
       await axios.get("http://fa.dglabsdev.com:8080/api/test_tasks/fetch")
       .then(async (res) => {
+        console.log("fetched records")
+        console.log(res)
         setall_records(res.data)
-        await setloader(false)
+        await setfetchloader(false)
       })
       .catch((error) => console.log(error))
     }
     fetchData()
   },[refresh])
 
-  const fetchCsv = async () => {
-    var file = document.getElementById("file")
+  const fetchCsv = async (e) => {
+    var file = e.target.files[0] || e.dataTransfer.files[0]
+
+    /*use Papa.parse to convert csv file to json obj*/
     Papa.parse(
       file,
       {
@@ -38,38 +43,33 @@ const InsertData = () => {
         header: true,
         complete: (result) => {
           setCSVData(result.data);
-          console.log("result.data")
+          alert("Your csv file is converted to json, check console")
+          console.log("csv to json")
           console.log(result.data)
         }
       }
     );
   }
 
-  const getCsv = async () => {
-    const csvdata = Papa.parse(await fetchCsv())
-    console.log("csvdata") 
-    console.log(csvdata) 
-    return csvdata
-  }
-
-
-  const jsonsample = records
+  const jsonsample = CSVData
 
   const PostData = async () => {
 
-    /*break array into set of 50*/
-    const chunks = _.chunk(jsonsample, 1)
-    
+    /*break array into set of 1000*/
+    const chunks = _.chunk(jsonsample, 1000)
+    console.log("chunks")
+    console.log(chunks)
+
     /*loop through the chunks and send single set as a req to an API*/
-    var count = 0
+    var count = 1
+    setinsertloader(true)
     for(const c of chunks) {
-      await setrefresh(false)
       await axios.post("http://fa.dglabsdev.com:8080/api/test_tasks/insert", c)
+      alert(`Chunk ${count} posted`)
       count ++
-      await setrefresh(true)
     }
     setrefresh(true)
-    alert(refresh)
+    setinsertloader(false)
   }
 
   const arr = [
@@ -215,45 +215,62 @@ const InsertData = () => {
         data,
       };
 
+    // const meta = {
+    //     title: 'Some Meta Title',
+    //     description: 'I am a description, and I can create multiple tags',
+    //     canonical: 'http://example.com/path/to/page',
+    //     meta: {
+    //         charset: 'utf-8',
+    //         name: {
+    //             keywords: 'react,meta,document,html,tags'
+    //         }
+    //     }
+      }
+        
+
   return (
     <>
-    <input type="file" id="file" onChange={fetchCsv}/>
-    <button
-    className="submit_btn"
-    onClick={PostData}
-    >
-    Submit Request in Chunks
-    </button>
-    <h3 className={refresh == true ? "hide" : ""}>{"loading..."}</h3>
-    <div>
-    {
-      all_records.map((obj, index) => {
-        var datalist = {
-          "no":index+1,
-          "_id":obj._id,
-          "createdAt":obj.createdAt,
-          "updatedAt":obj.updatedAt,
-
-        }
-        data.push(datalist)
-        data.sort(function(a, b){return b.no - a.no});
-
-      })
-    }
-      <DataTableExtensions
-        columns={columns}
-        data={data}
-        filter={false}
-        export={false}
-        print={false}
+    {/*<DocumentMeta {...meta} />*/}
+    <div style={{"textAlign":"center"}}>
+      <h3>1. Choose csv to post it as json</h3>
+      <input type="file" id="file" onChange={(e) => fetchCsv(e)}/>
+      <button
+      className="submit_btn"
+      onClick={PostData}
       >
-        <DataTable
-          noHeader
-          pagination
-          highlightOnHover
-          progressPending={loader}
-        />
-      </DataTableExtensions>
+      2. Submit Request in Chunks
+      </button>
+      <h3 className={insertloader == false ? "hide" : ""}>{"loading..."}</h3>
+      <div>
+      {
+        all_records.map((obj, index) => {
+          var datalist = {
+            "no":index+1,
+            "_id":obj._id,
+            "createdAt":obj.createdAt,
+            "updatedAt":obj.updatedAt,
+
+          }
+          data.push(datalist)
+          data.sort(function(a, b){return b.no - a.no});
+
+        })
+      }
+        <DataTableExtensions
+          columns={columns}
+          data={data}
+          filter={false}
+          export={false}
+          print={false}
+        >
+          <DataTable
+            noHeader
+            pagination
+            highlightOnHover
+            progressPending={fetchloader}
+          />
+        </DataTableExtensions>
+      </div>
     </div>
     </>
   );
