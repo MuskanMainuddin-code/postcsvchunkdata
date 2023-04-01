@@ -80,11 +80,13 @@ const InsertData = () => {
       /*loop through the chunks and send single set as a req to an API*/
       var count = 1
       setinsertloader(true)
+
       for(const c of chunks) {
         await axios.post("http://fa.dglabsdev.com:8080/api/test_tasks/insert", c)
         alert(`Chunk ${count} posted`)
         count ++
       }
+
       setrefresh(true)
       setinsertloader(false)
     }
@@ -124,7 +126,6 @@ const InsertData = () => {
 
   return (
     <>
-    {/*<DocumentMeta {...meta} />*/}
     <div style={{"textAlign":"center"}}>
       <h3>1. Choose csv to post it as json</h3>
       <input type="file" id="file" onChange={(e) => fetchCsv(e)}/>
