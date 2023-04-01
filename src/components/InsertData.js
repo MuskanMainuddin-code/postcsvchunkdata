@@ -13,29 +13,36 @@ const InsertData = () => {
   const [refresh, setrefresh] = useState(false)
   const [fetchloader, setfetchloader] = useState(false)
   const [insertloader, setinsertloader] = useState(false)
-  const [CSVData, setCSVData] = useState();
+  const [CSVData, setCSVData] = useState([]);
 
   var commonConfig = { delimiter: "," };
-
+  var effectCount = 0
   useEffect(() => {
-    const fetchData = async () => {
-      setfetchloader(true)
-      await axios.get("http://fa.dglabsdev.com:8080/api/test_tasks/fetch")
-      .then(async (res) => {
-        console.log("fetched records")
-        console.log(res)
-        setall_records(res.data)
-        await setfetchloader(false)
-      })
-      .catch((error) => console.log(error))
+    if(effectCount == 0){
+      const fetchData = async () => {
+        setfetchloader(true)
+        await axios.get("http://fa.dglabsdev.com:8080/api/test_tasks/fetch")
+        .then(async (res) => {
+
+          console.log("fetched records")
+          console.log(res)
+
+          setall_records(res.data)
+          await setfetchloader(false)
+
+        })
+        .catch((error) => console.log(error))
+      }
+      fetchData()
     }
-    fetchData()
+    effectCount += 1
   },[refresh])
 
   const fetchCsv = async (e) => {
     var file = e.target.files[0] || e.dataTransfer.files[0]
 
     /*use Papa.parse to convert csv file to json obj*/
+    document.getElementById("conversion").innerHTML = "..."
     Papa.parse(
       file,
       {
@@ -43,149 +50,49 @@ const InsertData = () => {
         header: true,
         complete: (result) => {
           setCSVData(result.data);
-          alert("Your csv file is converted to json, check console")
           console.log("csv to json")
           console.log(result.data)
+          document.getElementById("conversion").innerHTML = "Your csv file is converted to json, check console."
         }
       }
     );
   }
 
-  const jsonsample = CSVData
-
   const PostData = async () => {
 
-    /*break array into set of 1000*/
-    const chunks = _.chunk(jsonsample, 1000)
-    console.log("chunks")
-    console.log(chunks)
+    if(CSVData.length != 0){
+      /*break array into chunks of 1000 records each*/
 
-    /*loop through the chunks and send single set as a req to an API*/
-    var count = 1
-    setinsertloader(true)
-    for(const c of chunks) {
-      await axios.post("http://fa.dglabsdev.com:8080/api/test_tasks/insert", c)
-      alert(`Chunk ${count} posted`)
-      count ++
+      /*using loadash*/
+      const chunks = _.chunk(CSVData, 1000)
+
+      /*using for loop*/
+      /*const chunkSize = 1000;
+      var chunks = []
+      for (let i = 0; i < CSVData.length; i += chunkSize) {
+          const chunk = CSVData.slice(i, i + chunkSize);
+          chunks.push(chunk)
+      }*/
+
+      console.log("chunks")
+      console.log(chunks)
+
+      /*loop through the chunks and send single set as a req to an API*/
+      var count = 1
+      setinsertloader(true)
+      for(const c of chunks) {
+        await axios.post("http://fa.dglabsdev.com:8080/api/test_tasks/insert", c)
+        alert(`Chunk ${count} posted`)
+        count ++
+      }
+      setrefresh(true)
+      setinsertloader(false)
     }
-    setrefresh(true)
-    setinsertloader(false)
+    else{
+      alert("Please choose csv file!")
+    }
+
   }
-
-  const arr = [
-    {
-      "_id": "1",
-      "data": [
-        {
-          "Sequence": "2023 Beginning of the Year Sales Sequence (Targeted)",
-          "Step": 3,
-          "Template": "a",
-          "From Email": "wood.a@mfgfactur.com",
-          "To Email": "kevin.moran@phenixflooring.com",
-          "From Name": "Adam Wood",
-          "To Name": "Kevin Moran",
-          "Subject": "Re: 2023 Sales Goals // Business Development for Phenix Flooring",
-          "Body HTML": "<html><head></head><body><div><apdynamicvar data-dynamic-variable-key='first_name'>Kevin</apdynamicvar>,</div><div><br></div><div>Just to further elaborate on how our service works.</div><div><br></div><ol><li>We can provide better leads for your sales team or leadership so they can focus more on closing deals rather than prospecting.</li><li>We can tee up qualified sales conversations for you or your sales leaders so you can take advantage of the the precious time allocated towards sales.</li></ol><div>Would you be open to a conversation over the next few business days?</div></body></html><br/><div>Adam Wood</div><div>&nbsp;</div><div>Business Development, Factur</div><div>&nbsp;</div><div><img src=\"https://lh4.googleusercontent.com/EUGcnxIupsfDijF8DUwqGnBMGt9APuKSz4d5H269EVPXa4uQbtZB6cJApAemNSJU_JSsLytDVeZfmwiTjgyY3F0mFB2Jhyaq3G8fOjbBdVfFgB3pRxkAy5A7thls15t-dbbI9UVB\" style=\"max-width: 100%\" alt=\"Logo\" width=\"107\"></div><div>t: 317-622-8970</div><div>e: wood.a@mfgfactur.com</div><div>w: <a href=\"https://repo.mfgfactur.com/red.php?red=w9qfxkbgh1y\" rel=\"noopener noreferrer\" target=\"_blank\">mfgfactur.com</a></div>",
-          "Sent At (PST)": "",
-          "Scheduled At (PST)": "March 06, 2023 04:03",
-          "CC": "",
-          "BCC": "",
-          "Sent": false,
-          "Bounce": false,
-          "Open": false,
-          "Click": false,
-          "Unsubscribe": false,
-          "Replied": false,
-          "Reply Message": "",
-          "Contact Stage": "No Activity",
-          "To Company": "Phenix Flooring"
-        },
-        {
-          "Sequence": "2023 Beginning of the Year Sales Sequence (Targeted)",
-          "Step": 3,
-          "Template": "a",
-          "From Email": "aw@be-thefactur.com",
-          "To Email": "dmichalak@3m.com",
-          "From Name": "Adam Wood",
-          "To Name": "Dan Michalak",
-          "Subject": "Re: 2023 Sales Goals // Business Development for Acelity",
-          "Body HTML": "<html><head></head><body><div><apdynamicvar data-dynamic-variable-key='first_name'>Dan</apdynamicvar>,</div><div><br></div><div>Just to further elaborate on how our service works.</div><div><br></div><ol><li>We can provide better leads for your sales team or leadership so they can focus more on closing deals rather than prospecting.</li><li>We can tee up qualified sales conversations for you or your sales leaders so you can take advantage of the the precious time allocated towards sales.</li></ol><div>Would you be open to a conversation over the next few business days?</div></body></html><br/><div>Adam Wood</div><div><br></div><div>Business Development</div><div>&nbsp;</div><div><img src=\"https://lh4.googleusercontent.com/EUGcnxIupsfDijF8DUwqGnBMGt9APuKSz4d5H269EVPXa4uQbtZB6cJApAemNSJU_JSsLytDVeZfmwiTjgyY3F0mFB2Jhyaq3G8fOjbBdVfFgB3pRxkAy5A7thls15t-dbbI9UVB\" style=\"max-width: 100%\" alt=\"Logo\" width=\"107\"></div><div>t: 317-622-8970</div><div>e: <span style=\"color: rgba(0, 0, 0, 0.87);\">AW@be-thefactur.com</span></div><div>w: <a href=\"https://repo.be-thefactur.com/red.php?red=4kvss3ckq5p\" rel=\"noopener noreferrer\" target=\"_blank\" style=\"color: rgb(17, 85, 204);\">be-thefactur.com</a></div>",
-          "Sent At (PST)": "",
-          "Scheduled At (PST)": "March 06, 2023 04:01",
-          "CC": "",
-          "BCC": "",
-          "Sent": false,
-          "Bounce": false,
-          "Open": false,
-          "Click": false,
-          "Unsubscribe": false,
-          "Replied": false,
-          "Reply Message": "",
-          "Contact Stage": "No Activity",
-          "To Company": "Acelity"
-        }
-      ],
-      "createdAt": "2023-03-30T11:08:58.292Z",
-      "updatedAt": "2023-03-30T11:08:58.292Z",
-      "__v": 0
-    },
-    {
-      "_id": "2",
-      "data": [
-        {
-          "Sequence": "2023 Beginning of the Year Sales Sequence (Targeted)",
-          "Step": 3,
-          "Template": "a",
-          "From Email": "wood.a@mfgfactur.com",
-          "To Email": "kevin.moran@phenixflooring.com",
-          "From Name": "Adam Wood",
-          "To Name": "Kevin Moran",
-          "Subject": "Re: 2023 Sales Goals // Business Development for Phenix Flooring",
-          "Body HTML": "<html><head></head><body><div><apdynamicvar data-dynamic-variable-key='first_name'>Kevin</apdynamicvar>,</div><div><br></div><div>Just to further elaborate on how our service works.</div><div><br></div><ol><li>We can provide better leads for your sales team or leadership so they can focus more on closing deals rather than prospecting.</li><li>We can tee up qualified sales conversations for you or your sales leaders so you can take advantage of the the precious time allocated towards sales.</li></ol><div>Would you be open to a conversation over the next few business days?</div></body></html><br/><div>Adam Wood</div><div>&nbsp;</div><div>Business Development, Factur</div><div>&nbsp;</div><div><img src=\"https://lh4.googleusercontent.com/EUGcnxIupsfDijF8DUwqGnBMGt9APuKSz4d5H269EVPXa4uQbtZB6cJApAemNSJU_JSsLytDVeZfmwiTjgyY3F0mFB2Jhyaq3G8fOjbBdVfFgB3pRxkAy5A7thls15t-dbbI9UVB\" style=\"max-width: 100%\" alt=\"Logo\" width=\"107\"></div><div>t: 317-622-8970</div><div>e: wood.a@mfgfactur.com</div><div>w: <a href=\"https://repo.mfgfactur.com/red.php?red=w9qfxkbgh1y\" rel=\"noopener noreferrer\" target=\"_blank\">mfgfactur.com</a></div>",
-          "Sent At (PST)": "",
-          "Scheduled At (PST)": "March 06, 2023 04:03",
-          "CC": "",
-          "BCC": "",
-          "Sent": false,
-          "Bounce": false,
-          "Open": false,
-          "Click": false,
-          "Unsubscribe": false,
-          "Replied": false,
-          "Reply Message": "",
-          "Contact Stage": "No Activity",
-          "To Company": "Phenix Flooring"
-        },
-        {
-          "Sequence": "2023 Beginning of the Year Sales Sequence (Targeted)",
-          "Step": 3,
-          "Template": "a",
-          "From Email": "aw@be-thefactur.com",
-          "To Email": "dmichalak@3m.com",
-          "From Name": "Adam Wood",
-          "To Name": "Dan Michalak",
-          "Subject": "Re: 2023 Sales Goals // Business Development for Acelity",
-          "Body HTML": "<html><head></head><body><div><apdynamicvar data-dynamic-variable-key='first_name'>Dan</apdynamicvar>,</div><div><br></div><div>Just to further elaborate on how our service works.</div><div><br></div><ol><li>We can provide better leads for your sales team or leadership so they can focus more on closing deals rather than prospecting.</li><li>We can tee up qualified sales conversations for you or your sales leaders so you can take advantage of the the precious time allocated towards sales.</li></ol><div>Would you be open to a conversation over the next few business days?</div></body></html><br/><div>Adam Wood</div><div><br></div><div>Business Development</div><div>&nbsp;</div><div><img src=\"https://lh4.googleusercontent.com/EUGcnxIupsfDijF8DUwqGnBMGt9APuKSz4d5H269EVPXa4uQbtZB6cJApAemNSJU_JSsLytDVeZfmwiTjgyY3F0mFB2Jhyaq3G8fOjbBdVfFgB3pRxkAy5A7thls15t-dbbI9UVB\" style=\"max-width: 100%\" alt=\"Logo\" width=\"107\"></div><div>t: 317-622-8970</div><div>e: <span style=\"color: rgba(0, 0, 0, 0.87);\">AW@be-thefactur.com</span></div><div>w: <a href=\"https://repo.be-thefactur.com/red.php?red=4kvss3ckq5p\" rel=\"noopener noreferrer\" target=\"_blank\" style=\"color: rgb(17, 85, 204);\">be-thefactur.com</a></div>",
-          "Sent At (PST)": "",
-          "Scheduled At (PST)": "March 06, 2023 04:01",
-          "CC": "",
-          "BCC": "",
-          "Sent": false,
-          "Bounce": false,
-          "Open": false,
-          "Click": false,
-          "Unsubscribe": false,
-          "Replied": false,
-          "Reply Message": "",
-          "Contact Stage": "No Activity",
-          "To Company": "Acelity"
-        }
-      ],
-      "createdAt": "2023-03-30T11:08:58.292Z",
-      "updatedAt": "2023-03-30T11:08:58.292Z",
-      "__v": 0
-    }
-  ]
 
   const columns = [
     {
@@ -210,23 +117,10 @@ const InsertData = () => {
     },
   ];
 
-    const tableData = {
-        columns,
-        data,
-      };
-
-    // const meta = {
-    //     title: 'Some Meta Title',
-    //     description: 'I am a description, and I can create multiple tags',
-    //     canonical: 'http://example.com/path/to/page',
-    //     meta: {
-    //         charset: 'utf-8',
-    //         name: {
-    //             keywords: 'react,meta,document,html,tags'
-    //         }
-    //     }
-      }
-        
+  const tableData = {
+      columns,
+      data,
+    };        
 
   return (
     <>
@@ -234,6 +128,7 @@ const InsertData = () => {
     <div style={{"textAlign":"center"}}>
       <h3>1. Choose csv to post it as json</h3>
       <input type="file" id="file" onChange={(e) => fetchCsv(e)}/>
+      <p id="conversion"></p>
       <button
       className="submit_btn"
       onClick={PostData}
