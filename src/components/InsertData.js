@@ -5,7 +5,7 @@ import 'react-data-table-component-extensions/dist/index.css';
 import axios from 'axios';
 // import records from "./records";
 import _ from "lodash";
-import Papa from "papaparse";
+import Papa from "papaparse"
 
 const InsertData = () => {
   var data = [];
@@ -15,15 +15,14 @@ const InsertData = () => {
   const [insertloader, setinsertloader] = useState(false)
   const [CSVData, setCSVData] = useState([]);
 
-  var commonConfig = { delimiter: "," };
   var effectCount = 0
+  
   useEffect(() => {
     if(effectCount == 0){
       const fetchData = async () => {
         setfetchloader(true)
         await axios.get("http://fa.dglabsdev.com:8080/api/test_tasks/fetch")
         .then(async (res) => {
-
           console.log("fetched records")
           console.log(res)
 
@@ -42,11 +41,10 @@ const InsertData = () => {
     var file = e.target.files[0] || e.dataTransfer.files[0]
 
     /*use Papa.parse to convert csv file to json obj*/
-    document.getElementById("conversion").innerHTML = "..."
+    document.getElementById("conversion").innerHTML = "converting..."
     Papa.parse(
       file,
       {
-        ...commonConfig,
         header: true,
         complete: (result) => {
           setCSVData(result.data);
@@ -64,10 +62,10 @@ const InsertData = () => {
       /*break array into chunks of 1000 records each*/
 
       /*using loadash*/
-      const chunks = _.chunk(CSVData, 1000)
+      const chunks = _.chunk(CSVData, 100)
 
       /*using for loop*/
-      /*const chunkSize = 1000;
+      /*const chunkSize = 100;
       var chunks = []
       for (let i = 0; i < CSVData.length; i += chunkSize) {
           const chunk = CSVData.slice(i, i + chunkSize);
@@ -83,7 +81,7 @@ const InsertData = () => {
 
       for(const c of chunks) {
         await axios.post("http://fa.dglabsdev.com:8080/api/test_tasks/insert", c)
-        alert(`Chunk ${count} posted`)
+        // alert(`Chunk ${count} posted`)
         count ++
       }
 
@@ -148,7 +146,7 @@ const InsertData = () => {
 
           }
           data.push(datalist)
-          data.sort(function(a, b){return b.no - a.no});
+          data.sort((a, b) => {return b.no - a.no});
 
         })
       }
